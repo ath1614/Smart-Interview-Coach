@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Image, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import RecorderButton from '../components/RecorderButton';
 
 export default function PracticeScreen() {
-  const [facing, setFacing] = useState('front'); // default front camera
+  const [facing, setFacing] = useState('front');
   const [permission, requestPermission] = useCameraPermissions();
   const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState('');
 
   if (!permission) {
     return <View />;
@@ -15,55 +15,149 @@ export default function PracticeScreen() {
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Text style={styles.message}>We need your permission to use the camera</Text>
-        <TouchableOpacity onPress={requestPermission} style={styles.permissionBtn}>
-          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Grant Permission</Text>
+        <Text style={styles.message}>We need your permission to show the camera</Text>
+        <TouchableOpacity onPress={requestPermission} style={styles.permissionButton}>
+          <Text style={styles.text}>Grant Permission</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  function toggleCameraFacing() {
+  const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
-  }
+  };
 
-  const handleRecordPress = () => {
-    setIsRecording(!isRecording);
-    // Recording logic will be added in Day 4+
+  const handleRecord = () => {
+    if (!isRecording) {
+      setIsRecording(true);
+      setTranscript('');
+      // Simulate recording + speech recognition
+      setTimeout(() => {
+        setTranscript(
+          'This is a sample transcript of your mock interview. You can scroll through the full response easily now. The app will later analyze your tone, vocabulary, and filler words to provide AI-based feedback.'
+        );
+        setIsRecording(false);
+      }, 4000);
+    } else {
+      setIsRecording(false);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Practice Interview</Text>
+      <Text style={styles.header}>Practice Screen</Text>
 
-      <CameraView style={styles.camera} facing={facing} />
+      {/* Show Camera (real device) or Placeholder (simulator) */}
+      {Platform.OS === 'ios' && !process.env.EXPO_DEVICE ? (
+        <Image
+          source={require('../assets/placeholder.png')}
+          style={styles.camera}
+          resizeMode="cover"
+        />
+      ) : (
+        <CameraView style={styles.camera} facing={facing} />
+      )}
 
-      <RecorderButton isRecording={isRecording} onPress={handleRecordPress} />
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
+          <Text style={styles.text}>Flip</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.flipBtn} onPress={toggleCameraFacing}>
-        <Text style={styles.text}>Flip Camera</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, isRecording ? styles.stopButton : styles.recordButton]}
+          onPress={handleRecord}
+        >
+          <Text style={styles.text}>{isRecording ? 'Stop' : 'Record'}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Transcript Display (Scrollable) */}
+      {transcript ? (
+        <View style={styles.transcriptContainer}>
+          <Text style={styles.transcriptTitle}>Transcript:</Text>
+          <ScrollView style={styles.scrollArea}>
+            <Text style={styles.transcriptText}>{transcript}</Text>
+          </ScrollView>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000', alignItems: 'center' },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#fff', marginVertical: 10 },
-  message: { textAlign: 'center', paddingBottom: 10, color: '#fff' },
-  camera: { width: '90%', height: '60%', borderRadius: 15, overflow: 'hidden' },
-  permissionBtn: {
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    paddingVertical: 16,
+    color: '#222',
+  },
+  message: {
+    textAlign: 'center',
+    paddingBottom: 10,
+  },
+  camera: {
+    flex: 1,
+    borderRadius: 16,
+    marginHorizontal: 12,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 20,
+  },
+  button: {
     backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 50,
   },
-  flipBtn: {
-    marginTop: 15,
-    backgroundColor: '#555',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+  recordButton: {
+    backgroundColor: '#FF3B30',
+  },
+  stopButton: {
+    backgroundColor: '#34C759',
+  },
+  text: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  permissionButton: {
+    backgroundColor: '#007AFF',
+    padding: 12,
     borderRadius: 8,
   },
-  text: { fontSize: 16, color: '#fff' },
+  transcriptContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 12,
+    marginBottom: 16,
+    maxHeight: 250,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  transcriptTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#222',
+  },
+  scrollArea: {
+    maxHeight: 200,
+  },
+  transcriptText: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#444',
+  },
 });
