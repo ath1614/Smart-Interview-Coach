@@ -1,54 +1,28 @@
-import Voice from '@react-native-voice/voice';
-
 export class SpeechToText {
   constructor() {
     this.isListening = false;
     this.transcript = '';
     this.onResult = null;
     this.onError = null;
-    
-    Voice.onSpeechStart = this.onSpeechStart;
-    Voice.onSpeechEnd = this.onSpeechEnd;
-    Voice.onSpeechResults = this.onSpeechResults;
-    Voice.onSpeechError = this.onSpeechError;
+    this.timer = null;
   }
-
-  onSpeechStart = () => {
-    this.isListening = true;
-  };
-
-  onSpeechEnd = () => {
-    this.isListening = false;
-  };
-
-  onSpeechResults = (event) => {
-    const transcript = event.value[0];
-    this.transcript = transcript;
-    if (this.onResult) {
-      this.onResult(transcript);
-    }
-  };
-
-  onSpeechError = (error) => {
-    console.error('Speech recognition error:', error);
-    this.isListening = false;
-    if (this.onError) {
-      this.onError(error);
-    }
-  };
 
   async startListening(onResult, onError) {
     try {
       this.onResult = onResult;
       this.onError = onError;
       this.transcript = '';
+      this.isListening = true;
       
-      const available = await Voice.isAvailable();
-      if (!available) {
-        throw new Error('Speech recognition not available');
-      }
+      // Simulate speech recognition with a timer
+      this.timer = setTimeout(() => {
+        const mockTranscript = 'Speech recognition is simulated. Your actual speech would be transcribed here when using a real device with proper speech recognition setup.';
+        this.transcript = mockTranscript;
+        if (this.onResult) {
+          this.onResult(mockTranscript);
+        }
+      }, 2000);
       
-      await Voice.start('en-US');
       return true;
     } catch (error) {
       console.error('Failed to start speech recognition:', error);
@@ -59,8 +33,11 @@ export class SpeechToText {
 
   async stopListening() {
     try {
-      await Voice.stop();
-      await Voice.cancel();
+      this.isListening = false;
+      if (this.timer) {
+        clearTimeout(this.timer);
+        this.timer = null;
+      }
       return this.transcript;
     } catch (error) {
       console.error('Failed to stop speech recognition:', error);
@@ -70,8 +47,11 @@ export class SpeechToText {
 
   async destroy() {
     try {
-      await Voice.destroy();
-      Voice.removeAllListeners();
+      if (this.timer) {
+        clearTimeout(this.timer);
+        this.timer = null;
+      }
+      this.isListening = false;
     } catch (error) {
       console.error('Failed to destroy speech recognition:', error);
     }
