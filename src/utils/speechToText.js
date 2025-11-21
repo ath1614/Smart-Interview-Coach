@@ -1,9 +1,12 @@
+import { Platform } from 'react-native';
+
 export class SpeechToText {
   constructor() {
     this.isListening = false;
     this.transcript = '';
     this.onResult = null;
     this.onError = null;
+    this.recognition = null;
     this.timer = null;
     this.mockResponses = [
       "Well, I have over three years of experience in software development, particularly in React Native and JavaScript. I've successfully led two major projects that improved user engagement by 40%. I'm passionate about creating user-friendly applications and I believe my technical skills combined with my problem-solving abilities make me a strong candidate for this position.",
@@ -21,21 +24,65 @@ export class SpeechToText {
       this.transcript = '';
       this.isListening = true;
       
-      // Simulate speech recognition with a timer
-      this.timer = setTimeout(() => {
-        const mockTranscript = this.generateMockResponse(currentQuestion);
-        this.transcript = mockTranscript;
-        if (this.onResult) {
-          this.onResult(mockTranscript);
-        }
-      }, 3000);
-      
-      return true;
+      // Use real Web Speech API on web, mock on mobile
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+        return this.startWebSpeechRecognition();
+      } else {
+        return this.startMockRecognition(currentQuestion);
+      }
     } catch (error) {
       console.error('Failed to start speech recognition:', error);
       if (onError) onError(error);
       return false;
     }
+  }
+
+  startWebSpeechRecognition() {
+    try {
+      this.recognition = new window.webkitSpeechRecognition();
+      this.recognition.continuous = true;
+      this.recognition.interimResults = true;
+      this.recognition.lang = 'en-US';
+      
+      this.recognition.onresult = (event) => {
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          }
+        }
+        if (finalTranscript) {
+          this.transcript = finalTranscript;
+          if (this.onResult) {
+            this.onResult(finalTranscript);
+          }
+        }
+      };
+      
+      this.recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        if (this.onError) {
+          this.onError(event.error);
+        }
+      };
+      
+      this.recognition.start();
+      return true;
+    } catch (error) {
+      console.error('Web Speech API error:', error);
+      return false;
+    }
+  }
+
+  startMockRecognition(currentQuestion) {
+    this.timer = setTimeout(() => {
+      const mockTranscript = this.generateMockResponse(currentQuestion);
+      this.transcript = mockTranscript;
+      if (this.onResult) {
+        this.onResult(mockTranscript);
+      }
+    }, 3000);
+    return true;
   }
 
   generateMockResponse(question) {
@@ -59,10 +106,17 @@ export class SpeechToText {
   async stopListening() {
     try {
       this.isListening = false;
+      
+      if (this.recognition) {
+        this.recognition.stop();
+        this.recognition = null;
+      }
+      
       if (this.timer) {
         clearTimeout(this.timer);
         this.timer = null;
       }
+      
       return this.transcript;
     } catch (error) {
       console.error('Failed to stop speech recognition:', error);
@@ -72,10 +126,16 @@ export class SpeechToText {
 
   async destroy() {
     try {
+      if (this.recognition) {
+        this.recognition.stop();
+        this.recognition = null;
+      }
+      
       if (this.timer) {
         clearTimeout(this.timer);
         this.timer = null;
       }
+      
       this.isListening = false;
     } catch (error) {
       console.error('Failed to destroy speech recognition:', error);

@@ -75,9 +75,12 @@ export default function PracticeScreen() {
         const textToAnalyze = finalTranscript || transcript;
         if (textToAnalyze) {
           setTranscript(textToAnalyze);
+          setTranscript(prev => prev + '\n\nAnalyzing with AI...');
+          
           // Generate AI feedback
-          const analysis = feedbackAnalyzer.analyzeSpeech(textToAnalyze);
+          const analysis = await feedbackAnalyzer.analyzeSpeech(textToAnalyze, currentQuestion);
           setFeedback(analysis);
+          setTranscript(textToAnalyze); // Remove analyzing message
           
           // Save session data
           await saveSession({
@@ -142,8 +145,11 @@ export default function PracticeScreen() {
         <TouchableOpacity
           style={[styles.button, isRecording ? styles.stopButton : styles.recordButton]}
           onPress={handleRecord}
+          disabled={isRecording && transcript.includes('Analyzing')}
         >
-          <Text style={styles.text}>{isRecording ? 'Stop' : 'Record'}</Text>
+          <Text style={styles.text}>
+            {isRecording ? 'Stop' : 'Record'}
+          </Text>
         </TouchableOpacity>
       </View>
 

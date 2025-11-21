@@ -1,11 +1,44 @@
+import { OpenAIService } from './openaiService';
+
 export class FeedbackAnalyzer {
   constructor() {
     this.fillerWords = ['um', 'uh', 'like', 'you know', 'so', 'actually', 'basically', 'literally'];
     this.positiveWords = ['achieved', 'successful', 'improved', 'led', 'managed', 'created', 'developed'];
     this.weakWords = ['maybe', 'probably', 'i think', 'i guess', 'sort of', 'kind of'];
+    this.openaiService = new OpenAIService();
   }
 
-  analyzeSpeech(transcript) {
+  async analyzeSpeech(transcript, question = '') {
+    // Try OpenAI first, fallback to rule-based
+    if (question && transcript.length > 50) {
+      try {
+        const aiAnalysis = await this.openaiService.generateFeedback(question, transcript);
+        return this.formatAIResponse(aiAnalysis, transcript);
+      } catch (error) {
+        console.log('Using fallback analysis:', error);
+      }
+    }
+    
+    return this.ruleBasedAnalysis(transcript);
+  }
+
+  formatAIResponse(aiResponse, transcript) {
+    const words = transcript.split(/\s+/);
+    const fillerCount = this.countFillerWords(words);
+    
+    return {
+      score: aiResponse.score || 75,
+      feedback: aiResponse.feedback || ['Good response overall'],
+      metrics: {
+        fillerCount,
+        wordCount: words.length,
+        pace: Math.round(words.length / 1 * 60), // words per minute estimate
+        confidence: aiResponse.score || 75
+      }
+    };
+  }
+
+  ruleBasedAnalysis(transcript) {
     if (!transcript || transcript.length < 10) {
       return {
         score: 0,
