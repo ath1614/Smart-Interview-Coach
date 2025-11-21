@@ -4,6 +4,8 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { getRandomQuestion } from '../data/questions';
 import { AudioRecorder } from '../utils/audioRecorder';
 import { SpeechToText } from '../utils/speechToText';
+import { FeedbackAnalyzer } from '../utils/feedbackAnalyzer';
+import FeedbackBox from '../components/FeedbackBox';
 
 export default function PracticeScreen() {
   const [facing, setFacing] = useState('front');
@@ -12,8 +14,10 @@ export default function PracticeScreen() {
   const [transcript, setTranscript] = useState('');
   const [currentQuestion, setCurrentQuestion] = useState(getRandomQuestion());
   const [recordingUri, setRecordingUri] = useState(null);
+  const [feedback, setFeedback] = useState(null);
   const audioRecorder = useRef(new AudioRecorder()).current;
   const speechToText = useRef(new SpeechToText()).current;
+  const feedbackAnalyzer = useRef(new FeedbackAnalyzer()).current;
 
   useEffect(() => {
     return () => {
@@ -66,13 +70,19 @@ export default function PracticeScreen() {
       
       if (uri) {
         setRecordingUri(uri);
-        if (finalTranscript) {
-          setTranscript(finalTranscript);
-        } else if (!transcript) {
+        const textToAnalyze = finalTranscript || transcript;
+        if (textToAnalyze) {
+          setTranscript(textToAnalyze);
+          // Generate AI feedback
+          const analysis = feedbackAnalyzer.analyzeSpeech(textToAnalyze);
+          setFeedback(analysis);
+        } else {
           setTranscript('Recording completed! No speech detected.');
+          setFeedback(null);
         }
       } else {
         setTranscript('Recording failed. Please try again.');
+        setFeedback(null);
       }
     }
   };
@@ -87,6 +97,7 @@ export default function PracticeScreen() {
     setCurrentQuestion(getRandomQuestion());
     setTranscript('');
     setRecordingUri(null);
+    setFeedback(null);
     setIsRecording(false);
   };
 
@@ -140,6 +151,15 @@ export default function PracticeScreen() {
             </TouchableOpacity>
           )}
         </View>
+      )}
+
+      {/* AI Feedback */}
+      {feedback && (
+        <FeedbackBox 
+          feedback={feedback.feedback} 
+          score={feedback.score}
+          metrics={feedback.metrics}
+        />
       )}
     </View>
   );
