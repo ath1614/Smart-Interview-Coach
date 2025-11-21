@@ -93,14 +93,26 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa', padding: 16 },
-  header: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20, color: '#222' },
-  statsCard: { marginBottom: 16, elevation: 3 },
+  container: { flex: 1, backgroundColor: '#fff', padding: 16 },
+  header: { fontSize: 24, fontWeight: '600', textAlign: 'center', marginBottom: 24, color: '#000' },
+  statsCard: { 
+    marginBottom: 16, 
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 4,
+  },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
   statItem: { alignItems: 'center' },
-  statNumber: { fontSize: 32, fontWeight: 'bold', color: '#007AFF' },
+  statNumber: { fontSize: 32, fontWeight: '600', color: '#000' },
   statLabel: { fontSize: 14, color: '#666', marginTop: 4 },
-  historyCard: { marginBottom: 16, elevation: 3 },
+  historyCard: { 
+    marginBottom: 16, 
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 4,
+  },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, color: '#222' },
   sessionItem: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
   sessionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -108,7 +120,13 @@ const styles = StyleSheet.create({
   sessionScore: { fontSize: 16, fontWeight: 'bold' },
   sessionQuestion: { fontSize: 14, color: '#333', marginVertical: 4 },
   sessionMetrics: { fontSize: 12, color: '#888' },
-  emptyCard: { marginTop: 40, elevation: 2 },
+  emptyCard: { 
+    marginTop: 40, 
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 4,
+  },
   emptyText: { fontSize: 18, textAlign: 'center', color: '#666', marginBottom: 8 },
   emptySubtext: { fontSize: 14, textAlign: 'center', color: '#999' }
 });
