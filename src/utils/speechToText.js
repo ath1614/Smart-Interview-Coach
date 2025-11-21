@@ -42,10 +42,17 @@ export class SpeechToText {
       this.onResult = onResult;
       this.onError = onError;
       this.transcript = '';
+      
+      const available = await Voice.isAvailable();
+      if (!available) {
+        throw new Error('Speech recognition not available');
+      }
+      
       await Voice.start('en-US');
       return true;
     } catch (error) {
       console.error('Failed to start speech recognition:', error);
+      if (onError) onError(error);
       return false;
     }
   }
@@ -53,16 +60,18 @@ export class SpeechToText {
   async stopListening() {
     try {
       await Voice.stop();
+      await Voice.cancel();
       return this.transcript;
     } catch (error) {
       console.error('Failed to stop speech recognition:', error);
-      return null;
+      return this.transcript || null;
     }
   }
 
   async destroy() {
     try {
       await Voice.destroy();
+      Voice.removeAllListeners();
     } catch (error) {
       console.error('Failed to destroy speech recognition:', error);
     }
