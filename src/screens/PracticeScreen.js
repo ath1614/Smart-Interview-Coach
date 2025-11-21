@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Image, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { getRandomQuestion } from '../data/questions';
 
 export default function PracticeScreen() {
   const [facing, setFacing] = useState('front');
   const [permission, requestPermission] = useCameraPermissions();
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [currentQuestion, setCurrentQuestion] = useState(getRandomQuestion());
 
   if (!permission) {
     return <View />;
@@ -43,9 +45,21 @@ export default function PracticeScreen() {
     }
   };
 
+  const getNextQuestion = () => {
+    setCurrentQuestion(getRandomQuestion());
+    setTranscript('');
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Practice Screen</Text>
+      
+      <View style={styles.questionContainer}>
+        <Text style={styles.questionText}>{currentQuestion}</Text>
+        <TouchableOpacity style={styles.nextButton} onPress={getNextQuestion}>
+          <Text style={styles.nextButtonText}>Next Question</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Show Camera (real device) or Placeholder (simulator) */}
       {Platform.OS === 'ios' && !process.env.EXPO_DEVICE ? (
@@ -159,5 +173,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     color: '#444',
+  },
+  questionContainer: {
+    backgroundColor: '#fff',
+    margin: 12,
+    padding: 16,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  questionText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#222',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  nextButton: {
+    backgroundColor: '#34C759',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignSelf: 'center',
+  },
+  nextButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
