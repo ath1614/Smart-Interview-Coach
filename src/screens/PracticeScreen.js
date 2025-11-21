@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Image, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { getRandomQuestion } from '../data/questions';
+import { AudioRecorder } from '../utils/audioRecorder';
 
 export default function PracticeScreen() {
   const [facing, setFacing] = useState('front');
@@ -9,6 +10,8 @@ export default function PracticeScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [currentQuestion, setCurrentQuestion] = useState(getRandomQuestion());
+  const [recordingUri, setRecordingUri] = useState(null);
+  const audioRecorder = useRef(new AudioRecorder()).current;
 
   if (!permission) {
     return <View />;
@@ -29,19 +32,31 @@ export default function PracticeScreen() {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
-  const handleRecord = () => {
+  const handleRecord = async () => {
     if (!isRecording) {
       setIsRecording(true);
       setTranscript('');
-      // Simulate recording + speech recognition
-      setTimeout(() => {
-        setTranscript(
-          'This is a sample transcript of your mock interview. You can scroll through the full response easily now. The app will later analyze your tone, vocabulary, and filler words to provide AI-based feedback.'
-        );
+      setRecordingUri(null);
+      const success = await audioRecorder.startRecording();
+      if (!success) {
         setIsRecording(false);
-      }, 4000);
+        setTranscript('Failed to start recording. Please check permissions.');
+      }
     } else {
       setIsRecording(false);
+      const uri = await audioRecorder.stopRecording();
+      if (uri) {
+        setRecordingUri(uri);
+        setTranscript('Recording completed! Audio saved for analysis.');
+      } else {
+        setTranscript('Recording failed. Please try again.');
+      }
+    }
+  };
+
+  const playRecording = async () => {
+    if (recordingUri) {
+      await audioRecorder.playRecording(recordingUri);
     }
   };
 
@@ -85,13 +100,18 @@ export default function PracticeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Transcript Display (Scrollable) */}
+      {/* Recording Status & Playback */}
       {transcript ? (
         <View style={styles.transcriptContainer}>
-          <Text style={styles.transcriptTitle}>Transcript:</Text>
+          <Text style={styles.transcriptTitle}>Recording Status:</Text>
           <ScrollView style={styles.scrollArea}>
             <Text style={styles.transcriptText}>{transcript}</Text>
           </ScrollView>
+          {recordingUri && (
+            <TouchableOpacity style={styles.playButton} onPress={playRecording}>
+              <Text style={styles.playButtonText}>Play Recording</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : null}
     </View>
@@ -200,6 +220,19 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   nextButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  playButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    alignSelf: 'center',
+    marginTop: 10,
+  },
+  playButtonText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
