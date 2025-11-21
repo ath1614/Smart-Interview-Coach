@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Image, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { getRandomQuestion } from '../data/questions';
 import { AudioRecorder } from '../utils/audioRecorder';
+import { SpeechToText } from '../utils/speechToText';
 
 export default function PracticeScreen() {
   const [facing, setFacing] = useState('front');
@@ -12,6 +13,13 @@ export default function PracticeScreen() {
   const [currentQuestion, setCurrentQuestion] = useState(getRandomQuestion());
   const [recordingUri, setRecordingUri] = useState(null);
   const audioRecorder = useRef(new AudioRecorder()).current;
+  const speechToText = useRef(new SpeechToText()).current;
+
+  useEffect(() => {
+    return () => {
+      speechToText.destroy();
+    };
+  }, []);
 
   if (!permission) {
     return <View />;
@@ -37,17 +45,32 @@ export default function PracticeScreen() {
       setIsRecording(true);
       setTranscript('');
       setRecordingUri(null);
-      const success = await audioRecorder.startRecording();
-      if (!success) {
+      
+      // Start both audio recording and speech recognition
+      const audioSuccess = await audioRecorder.startRecording();
+      const speechSuccess = await speechToText.startListening(
+        (text) => setTranscript(text),
+        (error) => console.error('Speech error:', error)
+      );
+      
+      if (!audioSuccess && !speechSuccess) {
         setIsRecording(false);
         setTranscript('Failed to start recording. Please check permissions.');
       }
     } else {
       setIsRecording(false);
+      
+      // Stop both audio recording and speech recognition
       const uri = await audioRecorder.stopRecording();
+      const finalTranscript = await speechToText.stopListening();
+      
       if (uri) {
         setRecordingUri(uri);
-        setTranscript('Recording completed! Audio saved for analysis.');
+        if (finalTranscript) {
+          setTranscript(finalTranscript);
+        } else if (!transcript) {
+          setTranscript('Recording completed! No speech detected.');
+        }
       } else {
         setTranscript('Recording failed. Please try again.');
       }
@@ -105,7 +128,7 @@ export default function PracticeScreen() {
       {/* Recording Status & Playback */}
       {(transcript || recordingUri) && (
         <View style={styles.transcriptContainer}>
-          <Text style={styles.transcriptTitle}>Recording Status:</Text>
+          <Text style={styles.transcriptTitle}>{recordingUri ? 'Transcript:' : 'Recording Status:'}:</Text>
           {transcript && (
             <ScrollView style={styles.scrollArea}>
               <Text style={styles.transcriptText}>{transcript}</Text>
