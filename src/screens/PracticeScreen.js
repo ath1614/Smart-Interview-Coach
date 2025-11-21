@@ -5,6 +5,7 @@ import { getRandomQuestion } from '../data/questions';
 import { AudioRecorder } from '../utils/audioRecorder';
 import { SpeechToText } from '../utils/speechToText';
 import { FeedbackAnalyzer } from '../utils/feedbackAnalyzer';
+import { saveSession } from '../utils/storage';
 import FeedbackBox from '../components/FeedbackBox';
 
 export default function PracticeScreen() {
@@ -76,6 +77,15 @@ export default function PracticeScreen() {
           // Generate AI feedback
           const analysis = feedbackAnalyzer.analyzeSpeech(textToAnalyze);
           setFeedback(analysis);
+          
+          // Save session data
+          await saveSession({
+            question: currentQuestion,
+            transcript: textToAnalyze,
+            score: analysis.score,
+            feedback: analysis.feedback,
+            metrics: analysis.metrics
+          });
         } else {
           setTranscript('Recording completed! No speech detected.');
           setFeedback(null);
