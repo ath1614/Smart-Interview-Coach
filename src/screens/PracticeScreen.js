@@ -63,6 +63,8 @@ export default function PracticeScreen() {
   const getNextQuestion = () => {
     setCurrentQuestion(getRandomQuestion());
     setTranscript('');
+    setRecordingUri(null);
+    setIsRecording(false);
   };
 
   return (
@@ -101,19 +103,21 @@ export default function PracticeScreen() {
       </View>
 
       {/* Recording Status & Playback */}
-      {transcript ? (
+      {(transcript || recordingUri) && (
         <View style={styles.transcriptContainer}>
           <Text style={styles.transcriptTitle}>Recording Status:</Text>
-          <ScrollView style={styles.scrollArea}>
-            <Text style={styles.transcriptText}>{transcript}</Text>
-          </ScrollView>
+          {transcript && (
+            <ScrollView style={styles.scrollArea}>
+              <Text style={styles.transcriptText}>{transcript}</Text>
+            </ScrollView>
+          )}
           {recordingUri && (
             <TouchableOpacity style={styles.playButton} onPress={playRecording}>
               <Text style={styles.playButtonText}>Play Recording</Text>
             </TouchableOpacity>
           )}
         </View>
-      ) : null}
+      )}
     </View>
   );
 }

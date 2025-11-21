@@ -1,27 +1,42 @@
-import { Audio } from 'expo-av';
+import { AudioRecorder as ExpoAudioRecorder, AudioPlayer } from 'expo-audio';
 
 export class AudioRecorder {
   constructor() {
-    this.recording = null;
-    this.sound = null;
+    this.recorder = null;
+    this.player = null;
   }
 
   async startRecording() {
     try {
-      const permission = await Audio.requestPermissionsAsync();
-      if (permission.status !== 'granted') {
+      const permission = await ExpoAudioRecorder.requestPermissionsAsync();
+      if (!permission.granted) {
         throw new Error('Audio permission not granted');
       }
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
+      this.recorder = new ExpoAudioRecorder({
+        android: {
+          extension: '.m4a',
+          outputFormat: 'mpeg4',
+          audioEncoder: 'aac',
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: 'mpeg4aac',
+          audioQuality: 'max',
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
       });
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      this.recording = recording;
+      await this.recorder.prepareAsync();
+      await this.recorder.startAsync();
       return true;
     } catch (error) {
       console.error('Failed to start recording', error);
@@ -31,11 +46,11 @@ export class AudioRecorder {
 
   async stopRecording() {
     try {
-      if (!this.recording) return null;
+      if (!this.recorder) return null;
       
-      await this.recording.stopAndUnloadAsync();
-      const uri = this.recording.getURI();
-      this.recording = null;
+      await this.recorder.stopAsync();
+      const uri = this.recorder.uri;
+      this.recorder = null;
       return uri;
     } catch (error) {
       console.error('Failed to stop recording', error);
@@ -45,9 +60,11 @@ export class AudioRecorder {
 
   async playRecording(uri) {
     try {
-      const { sound } = await Audio.Sound.createAsync({ uri });
-      this.sound = sound;
-      await sound.playAsync();
+      if (this.player) {
+        await this.player.unloadAsync();
+      }
+      this.player = new AudioPlayer(uri);
+      await this.player.play();
     } catch (error) {
       console.error('Failed to play recording', error);
     }
