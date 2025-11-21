@@ -55,7 +55,8 @@ export default function PracticeScreen() {
       const audioSuccess = await audioRecorder.startRecording();
       const speechSuccess = await speechToText.startListening(
         (text) => setTranscript(text),
-        (error) => console.error('Speech error:', error)
+        (error) => console.error('Speech error:', error),
+        currentQuestion
       );
       
       if (!audioSuccess && !speechSuccess) {
